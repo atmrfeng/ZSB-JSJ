@@ -1,0 +1,66 @@
+# GitHub Pages 自动部署：push 到 main 即触发
+# 1. 仓库 → Settings → Pages → Source 选择 "GitHub Actions"
+# 2. 默认浏览器进入 Repository → Actions → 启用 workflows
+# 3. 部署成功后访问 https://<user>.github.io/<repo>/
+
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# 避免并发部署、限制到 main 分支
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+          cache-dependency-path: app/package-lock.json
+
+      - name: Install & Build
+        run: |
+          cd app
+          # 使用 npm ci；若 lock 文件与 package.json 不一致，会自动回退到 install
+          (npm ci || npm install) --no-audit --no-fund
+          npm run build
+        env:
+          NODE_ENV: production
+          # 默认 './' 对 GitHub Pages 子路径（https://<user>.github.io/<repo>/）友好
+          # 若你部署到自定义域名或仓库根路径，可注释掉下面这行
+          GITHUB_PAGES_BASE: ./
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: app/dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
