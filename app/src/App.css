@@ -1,0 +1,23 @@
+/* 刷题站全局样式补丁：覆盖脚手架默认居中的 #root 限制 */
+#root {
+  max-width: none;
+  margin: 0;
+  padding: 0;
+  text-align: left;
+}
+
+.line-clamp-2 {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+input[type='checkbox'] {
+  accent-color: #2563eb;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+}
